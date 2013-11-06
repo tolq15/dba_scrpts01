@@ -19,3 +19,8 @@ THIS IS WORK IN PROGRESS.
 
 2. Oracle Tablespace Monitor Script
 3. Linux Disk Space Monitor Script
+4. Perl library (my_library.pl) of common functions.
+    4.1. sub CheckDBRole was added to eliminate query to database from each and every script to check current role
+        (Primary or Standby). Some scripts should be run on Primary database only.
+    4.2. All environment variables come from .bash_profile_cron
+    
