@@ -57,28 +57,20 @@ use Mail::Sender;
 use File::ReadBackwards;
 use Time::Local;
 
-# HARD-CODED PATH AND NAME FOR LOCAL LIBRARY
-use lib "/home/oracle/scripts";
-require 'my_library.pl';
+use lib $ENV{WORKING_DIR};
+require $ENV{MY_LIBRARY};
 
 my $message = '';
 
 # Get hostname. This value is used to access config file.
 chomp (my $server_name = `hostname`);
 
-#-------------------------------------------#
-# Check and Parse required input parameters #
-#-------------------------------------------#
-my $db_name;
-
-GetOptions('sid:s', \$db_name);
-die "ERROR: Database name required\n" if (!defined $db_name);
+my $db_name = uc $ENV{ORACLE_SID};
 
 #--------------------------------------------------------------#
 # DB name and server name should be UPPER case. This is needed #
 # to read corresponding section from configuration file        #
 #--------------------------------------------------------------#
-$db_name           = uc $db_name;
 $server_name       = uc $server_name;
 my $unique_db_name = $server_name.'_'.$db_name;
 
@@ -104,13 +96,9 @@ my $alert_log        = $config_params_ref->{$unique_db_name}{'alert_log'};
 my $errors_include   = $config_params_ref->{$unique_db_name}{'errors_include'};
 my $errors_exclude   = $config_params_ref->{$unique_db_name}{'errors_exclude'};
 my $oldest_timestamp = $config_params_ref->{$unique_db_name}{'timestamp'};
-my $to               = $config_params_ref->{$unique_db_name}{'to'};
-my $smtp             = $config_params_ref->{$unique_db_name}{'smtp'};
 if (    ( !defined $alert_log      )
      or ( !defined $errors_include )
      or ( !defined $errors_exclude )
-     or ( !defined $to             )
-     or ( !defined $smtp           )
    )
 {
     print "Check configuration file. Some parameter was not defined.\n";
@@ -174,27 +162,22 @@ while( <ALERT> )
 if ( ( $message ne '' ) and ( $oldest_timestamp ne $timestamp2remember ))
 {
     # Print to output file and error message in chronological order
-    $message = "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n" . $message;
-
-    my $sender = new Mail::Sender;
-    (ref ($sender->MailMsg
-          (
-           {
-            to      => $to,
-            from    => basename ($0) ."@". $server_name,
-            smtp    => $smtp,
-            subject => "Errors in Alert Log $db_name on $server_name.",
-            msg     => $message,
-           }
-          )
-         )  and print "Mail sent OK.\n$message"
-    )    or die "Mail Sender Error: $Mail::Sender::Error\n";
+    $message = "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n"
+              . $message;
+    SendAlert ($server_name, $db_name, $message);
 }
 else
 {
     # If there are no alerts in alert log file, this should be the only
     # output line in the script log:
-    print "No errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    if ($oldest_timestamp eq $timestamp2remember)
+    {
+        print "No errors found since time\n$oldest_timestamp\n";
+    }
+    else
+    {
+        print "No errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    }
 }
 
 #-------------------------------------------------#

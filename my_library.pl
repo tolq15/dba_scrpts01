@@ -1,7 +1,13 @@
 #
 # LT: 06/16/2011 Change from Windows to Linux.
 # LT: 09/20/2011 Added HARD-CODED value for $ORACLE_HOME !!!
+# LT: 11/05/2013 All environment variables are defined in .bash_profile_cron file
 #
+# TODO:
+# 1. Remove $ENV{...} from Connect2Oracle
+# 2. Use SendMail in some scrips to use mailx.
+# 3. Create sub to check DB role.
+#=============================================================
 
 #====================#
 # LIBRARY SUBROUTINS #
@@ -16,10 +22,7 @@ sub Connect2Oracle
     die "ERROR: YOU ARE NOT 'oracle'! WHO ARE YOU?\n"
         if ($login_name ne 'oracle');
 
-    # should by in low case. "NVCSEA1" does not work
-    $ENV{ORACLE_SID}  = lc $db_name;
-    $ENV{ORACLE_HOME} = '/opt/oracle/product/11.0/db_1';
-    $ENV{PATH}        = $ENV{PATH}.':'.$ENV{ORACLE_HOME}.'/bin';
+    # Connect as sysdba
     $dbh = DBI->connect('dbi:Oracle:', '', '',
                         { ora_session_mode => ORA_SYSDBA });
 
@@ -254,7 +257,7 @@ sub CheckDoubleExecution ()
     my $Status_Runing = 'Runing';
 
     my $RC = 0;
-    
+
     return $RC;
 
     # ====================================#
@@ -262,7 +265,7 @@ sub CheckDoubleExecution ()
     # THE REST IS IRRELEVANT IN WINDOWS # #
     # ==================================# #
     # ====================================#
-    
+
     print "CheckDoubleExecution: BEGIN\n";
     print "CheckDoubleExecution: END\n";
 
@@ -289,7 +292,7 @@ sub CheckDoubleExecution ()
     }
 
     close (PS);
-    
+
     #===============================#
     # Check Status&PID combinations #
     #===============================#
@@ -304,7 +307,7 @@ sub CheckDoubleExecution ()
             print "Status is Runing, but process $pid is not running.\n";
             print "Last run of the script failed.\n";
         }
-        
+
         print "Write current process info in configuration file...\n";
         RewriteConfigFile ($db_name, $hash_ref, 'Start') ||
             die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
@@ -319,7 +322,7 @@ sub CheckDoubleExecution ()
         else
         {
             print "Status is $status, process $pid is still running.\n";
-            
+
             if ($status eq $Status_Done)
             {
                 print "Possible run-away process.\n";
@@ -327,14 +330,14 @@ sub CheckDoubleExecution ()
             else # $status eq $Status_Runing
             {
                 print "Execution time expired.\n";
-            }           
+            }
 
             print "Try to terminate process $pid.\nWrite new info in config file.\n";
 
             # terminate old script. See also page 584 in Cookbook
             my $processes_killed = kill 9 => $pid;
             chomp $processes_killed;
-        
+
             if ($processes_killed)
             {
                 print "$processes_killed process (PID = $pid) was killed.\n";
@@ -395,6 +398,36 @@ sub RewriteConfigFileNew
     ${$hash_ref}{$db_name}{$entry} = $value;
 
     return tied( %{$hash_ref} )->RewriteConfig;
+}
+
+sub CheckDBRole
+{
+    my ($db_name) = @_;
+
+    my $file_name = $ENV{DB_ROLE_FILE};
+    open (ROLE, $file_name) || die "my_library::CheckDBRole: Failed to open $file_name: $!\n";
+
+    my $role = <ROLE>;
+    close ROLE;
+    return $role;
+}
+
+sub SendAlert
+{
+    my ($the_server, $the_db_name, $the_message) = @_;
+    my $sender = new Mail::Sender;
+    (ref ($sender->MailMsg
+          (
+           {
+            to      => $ENV{TO},
+            from    => basename ($0) .'@'. $the_server,
+            smtp    => $ENV{SMTP},
+            subject => "Errors in Alert Log $the_db_name on $the_server.",
+            msg     => $the_message,
+           }
+          )
+         )  and print "Mail sent OK.\n$the_message\n"
+    )    or die "Mail Sender Error: $Mail::Sender::Error\n$the_message";
 }
 
 1;

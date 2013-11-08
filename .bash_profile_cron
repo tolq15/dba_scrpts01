@@ -1,0 +1,36 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+
+# Standard User specific environment and startup programs
+export ORACLE_SID=$1
+export ORACLE_UNQNAME=$2
+export ORACLE_BASE=/opt/oracle
+export ORACLE_HOME=/opt/oracle/product/11.0/db_1
+export PATH=$PATH:$ORACLE_HOME/bin
+export ORACLE_HOST_NAME=$HOSTNAME
+export GGATE=/opt/oracle/product/gg
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/opt/oracle/product/gg
+export NLS_LANG=AMERICAN_AMERICA.UTF8
+export THE_TIME=`date +%Y%m%d%H%M`
+export RMAN_LOGIN=RMAN/RMAN_0715@NVCSEA2  # ! Check server name
+export BACKUP_HOME=/oracle7/orabackup     # ! Check directory name
+export GE0_LOCATION=SEATTLE               # ! Check location
+export WORKING_DIR=/home/oracle/scripts
+
+# File with the DB role, created by current_db_role.sh each minute
+export DB_ROLE_FILE=$WORKING_DIR/current_db_role_${ORACLE_SID}.txt
+
+# Library in $WORKING_DIR used by Perl scripts
+#export MY_LIBRARY=my_library_test.pl
+export MY_LIBRARY=my_library.pl
+
+# Cron specific environment
+#export DBA_EMAIL=anatoli.lyssak@nuance.com,guy.boulais@nuance.com
+export DBA_EMAIL=opsDBAdmin@mobile.asp.nuance.com,kishore.mohapatra@nuance.com
+export ALERT_LOG_FILE=/home/oracle/scripts/log/alert_monitor_$1.log
+export TO=opsDBAdmin@mobile.asp.nuance.com
+export SMTP=stoam02.ksea.net

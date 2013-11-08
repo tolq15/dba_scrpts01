@@ -50,26 +50,18 @@ use File::Basename;
 use Config::IniFiles;
 use Mail::Sender;
 
-# HARD-CODED PATH AND NAME FOR LOCAL LIBRARY
-use lib "/home/oracle/scripts";
-require 'my_library.pl';
+use lib $ENV{WORKING_DIR};
+require $ENV{MY_LIBRARY};
 
 # Get hostname. This value is used to access config file.
 chomp (my $server_name = `hostname`);
 
-#-------------------------------------------#
-# Check and Parse required input parameters #
-#-------------------------------------------#
-my $db_name;
-
-GetOptions('sid:s', \$db_name);
-die "ERROR: Database name required\n" if (!defined $db_name);
+my $db_name = uc $ENV{ORACLE_SID};
 
 #--------------------------------------------------------------#
 # DB name and server name should be UPPER case. This is needed #
 # to read corresponding section from configuration file        #
 #--------------------------------------------------------------#
-$db_name           = uc $db_name;
 $server_name       = uc $server_name;
 my $unique_db_name = $server_name.'_'.$db_name;
 
@@ -87,13 +79,7 @@ my ($double_exec, $config_params_ref, $script_dir)
 #------------------------------------------#
 my $errors_include = $config_params_ref->{$unique_db_name}{'errors_include'};
 my $errors_exclude = $config_params_ref->{$unique_db_name}{'errors_exclude'};
-my $to             = $config_params_ref->{$unique_db_name}{'to'};
-my $smtp           = $config_params_ref->{$unique_db_name}{'smtp'};
-if (    ( !defined $errors_include )
-     or ( !defined $errors_exclude )
-     or ( !defined $to             )
-     or ( !defined $smtp           )
-   )
+if (( !defined $errors_include ) or ( !defined $errors_exclude ))
 {
     print "Check configuration file. Some parameter was not defined.\n";
     exit 1;
@@ -152,24 +138,15 @@ for (@$result_array_ref)
 #
 if ( $message ne '')
 {
-    my $sender = new Mail::Sender;
-    (ref ($sender->MailMsg
-          (
-           {
-            to      => $to,
-            from    => basename ($0) .'@'. $server_name,
-            smtp    => $smtp,
-            subject => "Errors in Alert Log $db_name on $server_name.",
-            msg     => $message
-           }
-          )
-         )  and print "Mail sent OK.\n"
-    )    or die "Mail Sender Error: $Mail::Sender::Error\n";
+    # Parameters: $0,$server_name,$db_name,$message
+    SendAlert ($server_name, $db_name, $message);
 }
 else
 {
     # If there are no alerts in alert log file, this should be the only
     # output line in the script log:
+    # Test:
+    #SendAlert ($server_name, $db_name, "This is the test 02.");
     print "No errors found\n";
 }
 

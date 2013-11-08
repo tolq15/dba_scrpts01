@@ -1,6 +1,10 @@
 #!/usr/bin/perl -w
 
 #=================#
+# Cron job (one string):
+# . /home/oracle/scripts/.bash_profile_cron sdavzse1 sdavzse1a;
+# /home/oracle/scripts/tablespace_monitoring.pl -pct 99
+#
 # All space in MB #
 #=================#
 
@@ -13,9 +17,8 @@ use Getopt::Long;
 use File::Basename;
 use Config::IniFiles;
 
-# HARD-CODED PATH
-use lib "/home/oracle/scripts";
-require 'my_library.pl';
+use lib $ENV{WORKING_DIR};
+require $ENV{MY_LIBRARY};
 
 my @ts_drive_data;
 my %ts_data;
@@ -27,33 +30,26 @@ my $pct_free = 0;
 #------------------------#
 my $db_name;
 my $percent_max;
-GetOptions('dbname=s' => \$db_name, 'pct=i' => \$percent_max);
-die "ERROR: Database name required\n" if (!defined $db_name);
+
+GetOptions('pct=i' => \$percent_max);
 die "ERROR: Maximum Percent Used is required\n" if (!defined $percent_max);
 
-$db_name = uc $db_name;
+$db_name = uc $ENV{ORACLE_SID};
 chomp (my $the_host = `hostname`);
 
 # Connect to the database
 my $dbh = Connect2Oracle ($db_name);
 
-#--------------------------------------------------------------------#
-# Check the database role. This scripts can run on Primary database. #
-# Views like dba_data_files, dba_tablespaces are not available on    #
-# mounted database (Standby).                                        #
-#--------------------------------------------------------------------#
-my $sql01 = qq {select DATABASE_ROLE from v\$database};
-
-my @tmp_row  = $dbh->selectrow_array($sql01);
-if ($DBI::err)
+#-------------------------------------------------------------#
+# Check the database role. This scripts should run on Primary #
+# database only. Views like dba_data_files, dba_tablespaces   #
+# are not available on mounted database (Standby).            #
+#-------------------------------------------------------------#
+if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-    print "Fetch failed for $sql01 $DBI::errstr\n";
-    $dbh->disconnect;
+    print "This is not PRIMARY database. Exit.\n";
     exit 1;
 }
-
-my $current_db_role = $tmp_row[0];
-die "$db_name role is not PRIMARY" if ($current_db_role ne 'PRIMARY');
 
 #--------------------------------------#
 # Find free space for each file system #
@@ -71,7 +67,7 @@ for ($ii=0; $ii < ($#df_info+1)/2; $ii++)
 #-----------------------------------------------------------------------#
 # For each tablespace find list of files with free/autoextensible space #
 #-----------------------------------------------------------------------#
-$sql01 = qq
+my $sql01 = qq
 {
 select b.tablespace_name ts, b.file_name, b.bytes/1024/1024  alloc,
 (select nvl(sum(a.bytes)/1024/1024,0)
