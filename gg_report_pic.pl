@@ -45,25 +45,6 @@ if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
     exit 1;
 }
 
-# my $sql01 = qq
-# {
-# SELECT sys_context('USERENV', 'DATABASE_ROLE') the_role FROM dual
-# };
-
-# my @db_role  = $dbh->selectrow_array($sql01);
-# if ($DBI::err)
-# {
-#     print "Fetch failed for $sql01 $DBI::errstr\n";
-#     $dbh->disconnect;
-#     exit 1;
-# }
-
-# if ($db_role[0] ne 'PRIMARY')
-# {
-#     print "Database role is not PRIMARY. Do nothing.\n";
-#     exit;
-# }
-
 #--------------------#
 # Get list of tables #
 #--------------------#

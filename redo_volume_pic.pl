@@ -32,23 +32,10 @@ my $dbh = Connect2Oracle ($db_name);
 #
 # Check for primary
 #
-my $sql01 = qq
+if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-SELECT sys_context('USERENV', 'DATABASE_ROLE') the_role FROM dual
-};
-
-my @db_role  = $dbh->selectrow_array($sql01);
-if ($DBI::err)
-{
-    print "Fetch failed for $sql01 $DBI::errstr\n";
-    $dbh->disconnect;
+    print "CheckDBRole did not return PRIMARY\n";
     exit 1;
-}
-
-if ($db_role[0] ne 'PRIMARY')
-{
-    print "Database role is not PRIMARY. Do nothing.\n";
-    exit;
 }
 
 #---------------------------------------------------#
@@ -56,7 +43,7 @@ if ($db_role[0] ne 'PRIMARY')
 # Other way is just set first and last day.         #
 # Select data for last $days days.                  #
 #---------------------------------------------------#
-$sql01 = qq
+my $sql01 = qq
 {
 select to_char(the_day,'MON dd')
       ,redo_volume_gb

@@ -22,10 +22,10 @@ then
     CURRENT_ROLE='UNKNOWN'
 fi
 
-#OLD_ROLE=`cat current_db_role_${1}.txt`
-if [[ -e current_db_role_${1}.txt ]]
+# find old role
+if [[ -e $DB_ROLE_FILE ]]
 then
-    OLD_ROLE=`cat current_db_role_${1}.txt`
+    OLD_ROLE=`cat $DB_ROLE_FILE`
 else
     OLD_ROLE='NO_STATUS_FILE'
 fi
@@ -40,7 +40,7 @@ then
     echo Role is the same. Do nothing.
 else
     # Write new role to status file
-    echo $CURRENT_ROLE | cat > current_db_role_${1}.txt
+    echo $CURRENT_ROLE | cat > $DB_ROLE_FILE
 
     # Write log file
     echo Database $1: Role on server `hostname` changed from $OLD_ROLE to $CURRENT_ROLE.
@@ -50,4 +50,4 @@ else
 fi
 
 # Set new status file timestamp
-touch current_db_role_${1}.txt
+touch $DB_ROLE_FILE

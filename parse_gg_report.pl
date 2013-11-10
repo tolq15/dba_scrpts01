@@ -51,27 +51,14 @@ my $dbh = Connect2Oracle ($db_name);
 #
 # Check for primary
 #
-my $sql01 = qq
+if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-SELECT sys_context('USERENV', 'DATABASE_ROLE') the_role FROM dual
-};
-
-my @db_role  = $dbh->selectrow_array($sql01);
-if ($DBI::err)
-{
-    print "Fetch failed for $sql01 $DBI::errstr\n";
-    $dbh->disconnect;
+    print "CheckDBRole did not return PRIMARY\n";
     exit 1;
 }
 
-if ($db_role[0] ne 'PRIMARY')
-{
-    print "Database role is not PRIMARY. Do nothing.\n";
-    exit;
-}
-
 # Prepare SQL
-$sql01 = qq{ INSERT INTO dba_monitor.gg_activity1
+my $sql01 = qq{ INSERT INTO dba_monitor.gg_activity1
               VALUES ( ?
                        , to_date(?,'yyyy-mm-dd hh24:mi:ss')
                        , to_date(?,'yyyy-mm-dd hh24:mi:ss')
