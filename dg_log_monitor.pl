@@ -6,37 +6,27 @@
 #============================================================#
 
 use strict;
-use Getopt::Long;
 use File::Basename;
 use File::ReadBackwards;
 use FileHandle;
 use Config::IniFiles;
-use Time::Local;
 use Mail::Sender;
 
-use lib "/home/oracle/scripts";
-require 'my_library.pl';
+use lib $ENV{WORKING_DIR};
+require $ENV{MY_LIBRARY};
 
 my $message = '';
 
 # Get hostname. This value is used to access config file.
 chomp (my $server_name = `hostname`);
 
-#-------------------------------------------#
-# Check and Parse required input parameters #
-#-------------------------------------------#
-my $db_name;
+my $db_name = uc $ENV{ORACLE_SID};
 
-GetOptions('sid:s', \$db_name);
-die "ERROR: Database name required\n" if (!defined $db_name);
-
-#-------------------------------------------------------------------#
-# Database name in UPPER case should be found in configuration file #
-#-------------------------------------------------------------------#
-$db_name     = uc $db_name;
-$server_name = uc $server_name;
-
-# This is needed to read correspondent section from configuration file
+#--------------------------------------------------------------#
+# DB name and server name should be UPPER case. This is needed #
+# to read corresponding section from configuration file        #
+#--------------------------------------------------------------#
+$server_name       = uc $server_name;
 my $unique_db_name = $server_name.'_'.$db_name;
 
 # Flag for first timestamp
@@ -52,7 +42,7 @@ my $timestamp_pattern = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3} ";
 # It does not check for double execution on Windows. #
 #----------------------------------------------------#
 my ($double_exec, $config_params_ref, $script_dir)
-    = SetConfCheckDouble($db_name, 'SCRIPT_DIR','CONFIG_FILE');
+    = SetConfCheckDouble($db_name, 'SCRIPT_DIR', 'CONFIG_FILE');
 
 #------------------------------------------#
 # Read configuration file and check format #
@@ -61,9 +51,12 @@ my $log_file         = $config_params_ref->{$unique_db_name}{'log_file'};
 my $errors_include   = $config_params_ref->{$unique_db_name}{'errors_include'};
 my $errors_exclude   = $config_params_ref->{$unique_db_name}{'errors_exclude'};
 my $oldest_timestamp = $config_params_ref->{$unique_db_name}{'timestamp'};
-if (( !defined $errors_include ) or ( !defined $errors_exclude ))
+if (    ( !defined $log_file       )
+     or ( !defined $errors_include )
+     or ( !defined $errors_exclude )
+   )
 {
-    print "Check configuration file. INCLUDE or EXCLUDE does not configured.\n";
+    print "Check configuration file. Some parameter was not defined.\n";
     exit 1;
 }
 
@@ -108,43 +101,35 @@ while( <DGERR> )
     if (    ($logfile_line =~ m/$errors_include/i)
         and ($logfile_line !~ m/$errors_exclude/i))
     {
-        # Print to output file and error message
-        print       $logfile_line;
-        $message .= $logfile_line;
+        $message = $logfile_line . $message;
     }
-
 }   # while( <DGERR> )
 
 #----------------------------------------------------#
 # Send e-mail if there are errors                    #
-# 'to' and 'smtp' are hard-coded                     #
-# These values should be moved to configuration file #
 #----------------------------------------------------#
-if ( $message ne '')
+if ( ( $message ne '' ) and ( $oldest_timestamp ne $timestamp2remember ))
 {
-    # Print to output file and error message
-    $message .= "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
-    print       "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    my $subject = "Errors in DataGuard Log $db_name on $server_name.";
 
-    my $sender = new Mail::Sender;
-    (ref ($sender->MailMsg
-          (
-           {
-            to      => 'opsDBAdmin@mobile.asp.nuance.com',
-            from    => 'oracle@'.$server_name,
-            smtp    => 'stoam02.ksea.net',
-            subject => "Errors in DataGuard Log $db_name on $server_name.",
-            msg     => $message
-           }
-          )
-         )  and print "Mail sent OK.\n"
-    )    or die "Mail Sender Error: $Mail::Sender::Error\n";
+    # Print to output file and error message
+    $message = "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n"
+              . $message;
+
+    SendAlert ( $server_name, $db_name, $subject, $message );
 }
 else
 {
     # If there are no alerts in alert log file, this should be the only
     # output line in the script log:
-    print "No errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    if ($oldest_timestamp eq $timestamp2remember)
+    {
+        print "No errors found since time\n$oldest_timestamp\n";
+    }
+    else
+    {
+        print "No errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    }
 }
 
 #-------------------------------------------------#

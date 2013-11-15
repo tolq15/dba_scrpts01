@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# Setup environment from cron job
-. /home/oracle/scripts/.bash_profile_cron $1 $2
-
-# Go to working directory
-cd /home/oracle/scripts
+# Script
+# 1. Check current database role (Primary or Standby).
+# 2. Write role into output filr so other scrips can get role from file, not from database.
+# 3. Send e-mail if database role changed, indicating possible failover.
+#
+# All environment settings done from cron job:
+# * * * * * . /home/oracle/scripts/.bash_profile_cron dbname db_unique_name;/home/oracle/scripts/check_db_role.sh > /home/oracle/scripts/log/check_db_role_dbname.log
 
 # Write current database role to variable
 CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
@@ -27,6 +29,8 @@ if [[ -e $DB_ROLE_FILE ]]
 then
     OLD_ROLE=`cat $DB_ROLE_FILE`
 else
+    # It will be here when this script run for the first time.
+    # Create $DB_ROLE_FILE manually to avoid this.
     OLD_ROLE='NO_STATUS_FILE'
 fi
 
