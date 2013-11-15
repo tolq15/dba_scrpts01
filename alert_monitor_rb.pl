@@ -49,13 +49,11 @@
 #=====================================================================================#
 
 use strict;
-use FileHandle;
-use Getopt::Long;
 use File::Basename;
+use File::ReadBackwards;
+use FileHandle;
 use Config::IniFiles;
 use Mail::Sender;
-use File::ReadBackwards;
-use Time::Local;
 
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
@@ -75,7 +73,7 @@ $server_name       = uc $server_name;
 my $unique_db_name = $server_name.'_'.$db_name;
 
 # Flag for first timestamp
-my $the_first_time  = 1;
+my $the_first_time = 1;
 
 # Oracle alert timestamp format: Sun Apr 12 07:29:48 2009
 my $timestamp_pattern = "^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s{1,2}\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4}\$";
@@ -113,7 +111,7 @@ my $timestamp2remember = $oldest_timestamp;
 # Open log file to read backward #
 #--------------------------------#
 tie *ALERT, 'File::ReadBackwards', $alert_log
-    or die "can't read $alert_log $!" ;
+    or die "Can't read $alert_log $!" ;
 
 #--------------------------------------------------#
 # Read the file line by line starting from the end #
@@ -153,7 +151,6 @@ while( <ALERT> )
     {
         $message = $alert_line . $message;
     }
-
 }   # while( <ALERT> )
 
 #----------------------------------------------------#
@@ -161,10 +158,12 @@ while( <ALERT> )
 #----------------------------------------------------#
 if ( ( $message ne '' ) and ( $oldest_timestamp ne $timestamp2remember ))
 {
+    my $subject = "Errors in Oracle Alert Log $db_name on $server_name.";
+
     # Print to output file and error message in chronological order
     $message = "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n"
               . $message;
-    SendAlert ($server_name, $db_name, $message);
+    SendAlert ( $server_name, $db_name, $subject, $message );
 }
 else
 {

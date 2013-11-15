@@ -45,7 +45,6 @@ use strict;
 use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
-use Getopt::Long;
 use File::Basename;
 use Config::IniFiles;
 use Mail::Sender;
@@ -138,15 +137,13 @@ for (@$result_array_ref)
 #
 if ( $message ne '')
 {
-    # Parameters: $0,$server_name,$db_name,$message
-    SendAlert ($server_name, $db_name, $message);
+    my $subject = "Errors in Oracle Alert Log $db_name on $server_name.";
+    SendAlert ( $server_name, $db_name, $subject, $message );
 }
 else
 {
     # If there are no alerts in alert log file, this should be the only
     # output line in the script log:
-    # Test:
-    #SendAlert ($server_name, $db_name, "This is the test 02.");
     print "No errors found\n";
 }
 

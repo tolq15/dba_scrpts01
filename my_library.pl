@@ -414,7 +414,7 @@ sub CheckDBRole
 
 sub SendAlert
 {
-    my ($the_server, $the_db_name, $the_message) = @_;
+    my ($the_server, $the_db_name, $the_subject, $the_message) = @_;
     my $sender = new Mail::Sender;
     (ref ($sender->MailMsg
           (
@@ -422,7 +422,7 @@ sub SendAlert
             to      => $ENV{TO},
             from    => basename ($0) .'@'. $the_server,
             smtp    => $ENV{SMTP},
-            subject => "Errors in Alert Log $the_db_name on $the_server.",
+            subject => $the_subject,
             msg     => $the_message,
            }
           )
