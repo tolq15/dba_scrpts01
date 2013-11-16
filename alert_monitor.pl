@@ -42,6 +42,7 @@
 #=====================================================================================#
 
 use strict;
+use warnings;
 use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
@@ -52,17 +53,13 @@ use Mail::Sender;
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
 
-# Get hostname. This value is used to access config file.
-chomp (my $server_name = `hostname`);
-
-my $db_name = uc $ENV{ORACLE_SID};
-
 #--------------------------------------------------------------#
 # DB name and server name should be UPPER case. This is needed #
 # to read corresponding section from configuration file        #
 #--------------------------------------------------------------#
-$server_name       = uc $server_name;
-my $unique_db_name = $server_name.'_'.$db_name;
+my $db_name        = uc $ENV{ORACLE_SID};
+my $server_name    = uc $ENV{ORACLE_HOST_NAME};
+my $config_db_name = $server_name.'_'.$db_name;
 
 #----------------------------------------------------#
 # Call procedure from my_library.pl                  #
@@ -76,8 +73,8 @@ my ($double_exec, $config_params_ref, $script_dir)
 #------------------------------------------#
 # Read configuration file and check format #
 #------------------------------------------#
-my $errors_include = $config_params_ref->{$unique_db_name}{'errors_include'};
-my $errors_exclude = $config_params_ref->{$unique_db_name}{'errors_exclude'};
+my $errors_include = $config_params_ref->{$config_db_name}{'errors_include'};
+my $errors_exclude = $config_params_ref->{$config_db_name}{'errors_exclude'};
 if (( !defined $errors_include ) or ( !defined $errors_exclude ))
 {
     print "Check configuration file. Some parameter was not defined.\n";

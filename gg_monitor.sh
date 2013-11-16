@@ -34,30 +34,14 @@ echo "Oracle PMON process is running."
 #---------------------#
 # Check database role #
 #---------------------#
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE||'+'||OPEN_MODE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 # Is it STANDBY?
-if [ "$CURRENT_ROLE" != "PRIMARY+READ WRITE" ]
+if [ "$CURRENT_ROLE" != "PRIMARY" ]
 then
     # Yes.
     echo "This is STANDBY database. GG should run on PRIMARY only."
-
-    # Is GG running?
-    if [ `ps -ef | grep "./mgr PARAMFILE" | grep -v grep | wc -l` -ne 0 ]
-    then
-        # Yes
-        echo "GoldenGate Manager is not running on Primary NVC database" | mailx -s "GoldenGate Manager is not running on $ORACLE_HOST_NAME for database $ORACLE_SID" $DBA_EMAIL
-    else
-        echo "GoldenGate is not running."
-    fi
-
     exit
 fi
 
@@ -78,9 +62,9 @@ echo "Golden Gate is running."
 # Output GG information to log file
 echo 'INFO ALL' | $GGATE/ggsci > $LOG_FILE
 
-#
-# Check for ABEND errors
-#
+#------------------------#
+# Check for ABEND errors #
+#------------------------#
 if [ `cat $LOG_FILE | grep ABENDED | grep -v grep | wc -l` -eq 0 ]
 then
     echo "No ABENDED process."
@@ -94,7 +78,6 @@ fi
 #
 lag=`awk '/RUNNING/ {print $4}' $LOG_FILE | sort -r | grep -v 00:00:00 | head -1`
 
-#MAX_LAG='00:30:00'
 if [ "$lag" \< "$MAX_LAG" ]
 then
     echo "No LAG found."

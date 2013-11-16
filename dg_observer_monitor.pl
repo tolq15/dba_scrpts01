@@ -10,9 +10,9 @@ use warnings;
 use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
-use Getopt::Long;
 use File::Basename;
 use Config::IniFiles;
+use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
@@ -39,12 +39,16 @@ if ($DBI::err)
 
 my $status   = $result_array_ref->[0][0];
 my $observer = $result_array_ref->[0][1];
+my $message  = "Database $db_name on server $the_host.\nFast Failover Status: $status\nObserver: $observer";
 
 if (($observer ne 'YES') or ($status ne 'TARGET UNDER LAG LIMIT'))
 {
-    `echo "Database $db_name on server $the_host.\nFast Failover Status: $status.\nObserver: $observer." | mailx -s "Warning from Fast Failover Observer on $the_host" opsDBAdmin\@mobile.asp.nuance.com`;
+    my $subject = "Warning from Fast Failover Observer on $the_host.";
+    SendAlert ( $the_host, $db_name, $subject, $message );
 }
-
-print "Database $db_name on server $the_host.\nFast Failover Status: $status.\nObserver: $observer.\n";
+else
+{
+    print "$message\n";
+}
 
 exit;

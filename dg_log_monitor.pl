@@ -6,6 +6,7 @@
 #============================================================#
 
 use strict;
+use warnings;
 use File::Basename;
 use File::ReadBackwards;
 use FileHandle;
@@ -15,25 +16,13 @@ use Mail::Sender;
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
 
-my $message = '';
-
-# Get hostname. This value is used to access config file.
-chomp (my $server_name = `hostname`);
-
-my $db_name = uc $ENV{ORACLE_SID};
-
 #--------------------------------------------------------------#
 # DB name and server name should be UPPER case. This is needed #
 # to read corresponding section from configuration file        #
 #--------------------------------------------------------------#
-$server_name       = uc $server_name;
-my $unique_db_name = $server_name.'_'.$db_name;
-
-# Flag for first timestamp
-my $the_first_time = 1;
-
-# DataGuard timestamp: 2013-02-26 03:53:35.169
-my $timestamp_pattern = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3} ";
+my $db_name        = uc $ENV{ORACLE_SID};
+my $server_name    = uc $ENV{ORACLE_HOST_NAME};
+my $config_db_name = $server_name.'_'.$db_name;
 
 #----------------------------------------------------#
 # Call procedure from my_library.pl                  #
@@ -47,10 +36,10 @@ my ($double_exec, $config_params_ref, $script_dir)
 #------------------------------------------#
 # Read configuration file and check format #
 #------------------------------------------#
-my $log_file         = $config_params_ref->{$unique_db_name}{'log_file'};
-my $errors_include   = $config_params_ref->{$unique_db_name}{'errors_include'};
-my $errors_exclude   = $config_params_ref->{$unique_db_name}{'errors_exclude'};
-my $oldest_timestamp = $config_params_ref->{$unique_db_name}{'timestamp'};
+my $log_file         = $config_params_ref->{$config_db_name}{'log_file'};
+my $errors_include   = $config_params_ref->{$config_db_name}{'errors_include'};
+my $errors_exclude   = $config_params_ref->{$config_db_name}{'errors_exclude'};
+my $oldest_timestamp = $config_params_ref->{$config_db_name}{'timestamp'};
 if (    ( !defined $log_file       )
      or ( !defined $errors_include )
      or ( !defined $errors_exclude )
@@ -64,6 +53,12 @@ if (    ( !defined $log_file       )
 # Timestamp to write in configuration file.
 my $timestamp2remember = $oldest_timestamp;
 
+# Flag for first timestamp
+my $the_first_time = 1;
+
+# DataGuard timestamp: 2013-02-26 03:53:35.169
+my $timestamp_pattern = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3} ";
+
 #--------------------------------#
 # Open log file to read backward #
 #--------------------------------#
@@ -73,6 +68,7 @@ tie *DGERR, 'File::ReadBackwards', $log_file
 #--------------------------------------------------#
 # Read the file line by line starting from the end #
 #--------------------------------------------------#
+my $message = '';
 while( <DGERR> )
 {
     my $logfile_line = $_;
@@ -136,6 +132,6 @@ else
 # All is done. Now we can overwrite old timestamp #
 # in configuration file                           #
 #-------------------------------------------------#
-RewriteConfigFileNew ($unique_db_name, $config_params_ref, 'timestamp', $timestamp2remember) || die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFileNew ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember) || die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
 
 exit;

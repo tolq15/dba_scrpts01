@@ -6,44 +6,23 @@
 #===========================================================#
 
 use strict;
-use Getopt::Long;
+use warnings;
 use File::Basename;
 use File::ReadBackwards;
 use FileHandle;
 use Config::IniFiles;
-use Time::Local;
 use Mail::Sender;
 
-use lib "/home/oracle/scripts";
-require 'my_library.pl';
+use lib $ENV{WORKING_DIR};
+require $ENV{MY_LIBRARY};
 
-my $message = '';
-
-# Get hostname. This value is used to access config file.
-chomp (my $server_name = `hostname`);
-
-#-------------------------------------------#
-# Check and Parse required input parameters #
-#-------------------------------------------#
-my $db_name;
-
-GetOptions('sid:s', \$db_name);
-die "ERROR: Database name required\n" if (!defined $db_name);
-
-#-------------------------------------------------------------------#
-# Database name in UPPER case should be found in configuration file #
-#-------------------------------------------------------------------#
-$db_name     = uc $db_name;
-$server_name = uc $server_name;
-
-# This is needed to read correspondent section from configuration file
-my $unique_db_name = $server_name.'_'.$db_name;
-
-# Flag for first timestamp
-my $the_first_time = 1;
-
-# GoldenGate timestamp: 2013-02-01 17:00:15
-my $timestamp_pattern = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} ";
+#--------------------------------------------------------------#
+# DB name and server name should be UPPER case. This is needed #
+# to read corresponding section from configuration file        #
+#--------------------------------------------------------------#
+my $db_name        = uc $ENV{ORACLE_SID};
+my $server_name    = uc $ENV{ORACLE_HOST_NAME};
+my $config_db_name = $server_name.'_'.$db_name;
 
 #----------------------------------------------------#
 # Call procedure from my_library.pl                  #
@@ -57,19 +36,28 @@ my ($double_exec, $config_params_ref, $script_dir)
 #------------------------------------------#
 # Read configuration file and check format #
 #------------------------------------------#
-my $ggserr_log       = $config_params_ref->{$unique_db_name}{'ggserr_log'};
-my $errors_include   = $config_params_ref->{$unique_db_name}{'errors_include'};
-my $errors_exclude   = $config_params_ref->{$unique_db_name}{'errors_exclude'};
-my $oldest_timestamp = $config_params_ref->{$unique_db_name}{'timestamp'};
-if (( !defined $errors_include ) or ( !defined $errors_exclude ))
+my $ggserr_log       = $config_params_ref->{$config_db_name}{'ggserr_log'};
+my $errors_include   = $config_params_ref->{$config_db_name}{'errors_include'};
+my $errors_exclude   = $config_params_ref->{$config_db_name}{'errors_exclude'};
+my $oldest_timestamp = $config_params_ref->{$config_db_name}{'timestamp'};
+if (    ( !defined $ggserr_log     )
+     or ( !defined $errors_include )
+     or ( !defined $errors_exclude )
+   )
 {
-    print "Check configuration file. INCLUDE or EXCLUDE does not configured.\n";
+    print "Check configuration file. Some parameter was not defined.\n";
     exit 1;
 }
 
 # In case if there is no new timestamps in log file.
 # Timestamp to write in configuration file.
 my $timestamp2remember = $oldest_timestamp;
+
+# Flag for first timestamp
+my $the_first_time = 1;
+
+# GoldenGate timestamp: 2013-02-01 17:00:15
+my $timestamp_pattern = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} ";
 
 #--------------------------------#
 # Open log file to read backward #
@@ -80,6 +68,7 @@ tie *GGSERR, 'File::ReadBackwards', $ggserr_log
 #--------------------------------------------------#
 # Read the file line by line starting from the end #
 #--------------------------------------------------#
+my $message = '';
 while( <GGSERR> )
 {
     my $ggserr_line = $_;
@@ -109,48 +98,40 @@ while( <GGSERR> )
         and ($ggserr_line !~ m/$errors_exclude/i))
     {
         # Print to output file and error message
-        print       $ggserr_line;
-        $message .= $ggserr_line;
+        $message = $ggserr_line . $message;
     }
-
 }   # while( <GGSERR> )
 
 #----------------------------------------------------#
-# Send e-mail if there are errors                    #
-# 'to' and 'smtp' are hard-coded                     #
-# These values should be moved to configuration file #
+# Send e-mail if there are new errors.               #
 #----------------------------------------------------#
-if ( $message ne '')
+if ( ( $message ne '' ) and ( $oldest_timestamp ne $timestamp2remember ))
 {
-    # Print to output file and error message
-    $message .= "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
-    print       "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    my $subject = "Errors in GoldenGate Log $db_name on $server_name.";
 
-    my $sender = new Mail::Sender;
-    (ref ($sender->MailMsg
-          (
-           {
-            to      => 'opsDBAdmin@mobile.asp.nuance.com',
-            from    => 'oracle@'.$server_name,
-            smtp    => 'stoam02.ksea.net',
-            subject => "Errors in GoldenGate Log $db_name on $server_name.",
-            msg     => $message
-           }
-          )
-         )  and print "Mail sent OK.\n"
-    )    or die "Mail Sender Error: $Mail::Sender::Error\n";
+    # Print to output file and error message in chronological order
+    $message = "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n"
+              . $message;
+    SendAlert ( $server_name, $db_name, $subject, $message );
 }
 else
 {
     # If there are no alerts in alert log file, this should be the only
     # output line in the script log:
-    print "No errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    if ($oldest_timestamp eq $timestamp2remember)
+    {
+        print "No errors found since time\n$oldest_timestamp\n";
+    }
+    else
+    {
+        print "No errors found in time range\n$oldest_timestamp\n$timestamp2remember\n";
+    }
 }
 
 #-------------------------------------------------#
 # All is done. Now we can overwrite old timestamp #
 # in configuration file                           #
 #-------------------------------------------------#
-RewriteConfigFileNew ($unique_db_name, $config_params_ref, 'timestamp', $timestamp2remember) || die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFileNew ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember) || die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
 
 exit;
