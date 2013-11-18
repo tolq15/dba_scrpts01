@@ -72,8 +72,7 @@ my $unique_db_name = $server_name.'_'.$db_name;
 # and return reference hash with config parameters   #
 # It does not check for double execution on Windows. #
 #----------------------------------------------------#
-my ($double_exec, $config_params_ref, $script_dir)
-    = SetConfCheckDouble($db_name, 'SCRIPT_DIR','CONFIG_FILE');
+my $config_params_ref = GetConfig();
 
 #------------------------------------------#
 # Read configuration file and check format #
@@ -115,7 +114,8 @@ foreach (reverse @report_files)
 chdir $current_dir;
 
 # Write new timestamp into configuration file
-RewriteConfigFileNew ($unique_db_name, $config_params_ref, 'timestamp', $timestamp2remember) || die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFile ($unique_db_name, $config_params_ref, 'timestamp', $timestamp2remember)
+    or die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
 
 exit;
 

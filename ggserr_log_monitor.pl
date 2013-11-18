@@ -24,14 +24,23 @@ my $db_name        = uc $ENV{ORACLE_SID};
 my $server_name    = uc $ENV{ORACLE_HOST_NAME};
 my $config_db_name = $server_name.'_'.$db_name;
 
+#----------------------------------------------------------#
+# Check the database role. This scripts should run on      #
+# Primary database only because GoldenGate run on Primary. #
+#----------------------------------------------------------#
+if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
+{
+    print "This is not PRIMARY database. Exit.\n";
+    exit 1;
+}
+
 #----------------------------------------------------#
 # Call procedure from my_library.pl                  #
 # Get file names, check for double execution         #
 # and return reference hash with config parameters   #
 # It does not check for double execution on Windows. #
 #----------------------------------------------------#
-my ($double_exec, $config_params_ref, $script_dir)
-    = SetConfCheckDouble($db_name, 'SCRIPT_DIR','CONFIG_FILE');
+my $config_params_ref = GetConfig();
 
 #------------------------------------------#
 # Read configuration file and check format #
@@ -132,6 +141,7 @@ else
 # All is done. Now we can overwrite old timestamp #
 # in configuration file                           #
 #-------------------------------------------------#
-RewriteConfigFileNew ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember) || die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFile ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember)
+    or die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
 
 exit;

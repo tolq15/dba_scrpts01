@@ -67,8 +67,7 @@ my $config_db_name = $server_name.'_'.$db_name;
 # and return reference hash with config parameters   #
 # It does not check for double execution on Windows. #
 #----------------------------------------------------#
-my ($double_exec, $config_params_ref, $script_dir)
-    = SetConfCheckDouble($db_name, 'SCRIPT_DIR', 'CONFIG_FILE');
+my $config_params_ref = GetConfig();
 
 #------------------------------------------#
 # Read configuration file and check format #
