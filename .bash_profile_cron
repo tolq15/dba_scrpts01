@@ -16,7 +16,7 @@ export GGATE=/opt/oracle/product/gg
 export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/opt/oracle/product/gg
 export NLS_LANG=AMERICAN_AMERICA.UTF8
 export THE_TIME=`date +%Y%m%d%H%M`
-export RMAN_LOGIN=RMAN/RMAN_0715@NVCSEA2  # ! Check server name
+export RMAN_LOGIN=RMAN/xxxxxxxxx@NVCSEA2  # ! Check server name
 export BACKUP_HOME=/oracle7/orabackup     # ! Check directory name
 export GE0_LOCATION=SEATTLE               # ! Check location
 export WORKING_DIR=/home/oracle/scripts
@@ -29,8 +29,8 @@ export DB_ROLE_FILE=$WORKING_DIR/current_db_role_${ORACLE_SID}.txt
 export MY_LIBRARY=my_library.pl
 
 # Cron specific environment
-#export DBA_EMAIL=anatoli.lyssak@nuance.com,guy.boulais@nuance.com
-export DBA_EMAIL=opsDBAdmin@mobile.asp.nuance.com,kishore.mohapatra@nuance.com
+#export DBA_EMAIL=anatoli.lyssak@xxxxxx.com
+export DBA_EMAIL=opsDBAdmin@xxxxxxxxxx.com
 export ALERT_LOG_FILE=/home/oracle/scripts/log/alert_monitor_$1.log
-export TO=opsDBAdmin@mobile.asp.nuance.com
-export SMTP=stoam02.ksea.net
+export TO=opsDBAdmin@xxxxxxxxx
+export SMTP=xxxxxxx
