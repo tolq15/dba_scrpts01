@@ -47,7 +47,6 @@ use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
 use File::Basename;
-use Config::IniFiles;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};

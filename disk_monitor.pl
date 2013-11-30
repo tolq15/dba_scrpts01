@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use Config::IniFiles;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};

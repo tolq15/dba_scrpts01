@@ -6,7 +6,6 @@ use English;
 use FileHandle;
 use Getopt::Long;
 use File::Basename;
-use Config::IniFiles;
 use Excel::Writer::XLSX;
 use Mail::Sender;
 use Data::Dumper;
@@ -31,7 +30,8 @@ my %month = ( JAN=>'01', FEB=>'02', MAR=>'03',
 #------------------------------#
 my @data0X; # X axes (calendare date)
 
-chomp (my $server_name = `hostname`);
+my $location    = $ENV{GE0_LOCATION};
+my $server_name = $ENV{ORACLE_HOST_NAME};
 
 my %chart_data; # key is the CPU# points to data array for the CPU
 my $ii = -1;    # to count spreadsheet rows
@@ -45,9 +45,8 @@ my $ymd = sprintf("%04d%02d%02d",$year+1900,$mon+1,$mday);
 # This should be placed in config file #
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 my $mpstat_dir = '/home/oracle/tolq/oswbb/archive/oswmpstat/';
-my $location  = 'Seattle';
-my $work_dir  = '/home/oracle/scripts/Excel/';
-my $file_name = $work_dir
+my $work_dir   = '/home/oracle/scripts/Excel/';
+my $file_name  = $work_dir
     . 'mpstat_'
     . $location
     . '_'

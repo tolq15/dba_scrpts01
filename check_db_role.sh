@@ -2,7 +2,7 @@
 
 # Script
 # 1. Check current database role (Primary or Standby).
-# 2. Write role into output filr so other scrips can get role from file, not from database.
+# 2. Write role into output file so other scrips can get role from file, not from database.
 # 3. Send e-mail if database role changed, indicating possible failover.
 #
 # All environment settings done from cron job:
@@ -47,10 +47,10 @@ else
     echo $CURRENT_ROLE | cat > $DB_ROLE_FILE
 
     # Write log file
-    echo Database $1: Role on server `hostname` changed from $OLD_ROLE to $CURRENT_ROLE.
+    echo Database $ORACLE_SID: Role on server $ORACLE_HOST_NAME changed from $OLD_ROLE to $CURRENT_ROLE.
 
     # Send e-mail
-    echo Database $1: Role on server `hostname` changed from $OLD_ROLE to $CURRENT_ROLE. | mailx -s "Database $1: Possible failover." $DBA_EMAIL
+    echo Database $ORACLE_SID: Role on server $ORACLE_HOST_NAME changed from $OLD_ROLE to $CURRENT_ROLE. | mailx -s "Database $ORACLE_SID: Possible failover." $DBA_EMAIL
 fi
 
 # Set new status file timestamp

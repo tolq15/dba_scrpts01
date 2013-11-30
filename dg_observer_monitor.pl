@@ -11,14 +11,13 @@ use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
 use File::Basename;
-use Config::IniFiles;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
 
-my $db_name = uc $ENV{ORACLE_SID};
-chomp (my $the_host = `hostname`);
+my $db_name     = uc $ENV{ORACLE_SID};
+my $server_name = uc $ENV{ORACLE_HOST_NAME};
 my $mail_body;
 
 my $dbh = Connect2Oracle ($db_name);
@@ -39,12 +38,12 @@ if ($DBI::err)
 
 my $status   = $result_array_ref->[0][0];
 my $observer = $result_array_ref->[0][1];
-my $message  = "Database $db_name on server $the_host.\nFast Failover Status: $status\nObserver: $observer";
+my $message  = "Database $db_name on server $server_name.\nFast Failover Status: $status\nObserver: $observer";
 
 if (($observer ne 'YES') or ($status ne 'TARGET UNDER LAG LIMIT'))
 {
-    my $subject = "Warning from Fast Failover Observer on $the_host.";
-    SendAlert ( $the_host, $db_name, $subject, $message );
+    my $subject = "Warning from Fast Failover Observer on $server_name.";
+    SendAlert ( $server_name, $db_name, $subject, $message );
 }
 else
 {

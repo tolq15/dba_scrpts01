@@ -53,7 +53,6 @@ use warnings;
 use File::Basename;
 use File::ReadBackwards;
 use FileHandle;
-use Config::IniFiles;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};
@@ -66,6 +65,7 @@ require $ENV{MY_LIBRARY};
 my $db_name        = uc $ENV{ORACLE_SID};
 my $server_name    = uc $ENV{ORACLE_HOST_NAME};
 my $config_db_name = $server_name.'_'.$db_name;
+my $alert_log     = "$ENV{ORACLE_BASE}/diag/rdbms/$ENV{ORACLE_UNQNAME}/$ENV{ORACLE_SID}/trace/alert_$ENV{ORACLE_SID}.log";
 
 #----------------------------------------------------#
 # Call procedure from my_library.pl                  #
@@ -78,14 +78,10 @@ my $config_params_ref = GetConfig();
 #------------------------------------------#
 # Read configuration file and check format #
 #------------------------------------------#
-my $alert_log        = $config_params_ref->{$config_db_name}{'alert_log'};
 my $errors_include   = $config_params_ref->{$config_db_name}{'errors_include'};
 my $errors_exclude   = $config_params_ref->{$config_db_name}{'errors_exclude'};
 my $oldest_timestamp = $config_params_ref->{$config_db_name}{'timestamp'};
-if (    ( !defined $alert_log      )
-     or ( !defined $errors_include )
-     or ( !defined $errors_exclude )
-   )
+if (( !defined $errors_include ) or ( !defined $errors_exclude ))
 {
     print "Check configuration file. Some parameter was not defined.\n";
     exit 1;
@@ -178,7 +174,6 @@ else
 # All is done. Now we can overwrite old timestamp #
 # in configuration file                           #
 #-------------------------------------------------#
-RewriteConfigFile ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember)
-    or die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFile ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember);
 
 exit;

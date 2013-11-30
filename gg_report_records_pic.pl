@@ -10,12 +10,12 @@
 #================================================================#
 
 use strict;
+use warnings;
 use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
 use Getopt::Long;
 use File::Basename;
-use Config::IniFiles;
 use perlchartdir;
 use Mail::Sender;
 
@@ -25,14 +25,13 @@ require $ENV{MY_LIBRARY};
 #------------------------#
 # Parse input parameters #
 #------------------------#
-my $db_name = uc $ENV{ORACLE_SID};
-chomp (my $server_name = `hostname`);
+my $db_name     = uc $ENV{ORACLE_SID};
+my $server_name = uc $ENV{ORACLE_HOST_NAME};
+my $location    =    $ENV{GE0_LOCATION};
 my $days;
-my $location;
 
-GetOptions('days:s', \$days, 'dc:s', \$location);
+GetOptions('days:s', \$days);
 die "ERROR: Number of days required\n" if (!defined $days);
-die "ERROR: DC location required\n"    if (!defined $location);
 
 # Names for different charts
 my @title     = ("Total Number of Application Opereations (insert/delete/update) per Second in Last $days Days.\nDatabase: $db_name in $location. Source: GG PUMP process report."
@@ -56,7 +55,7 @@ my $dbh = Connect2Oracle ($db_name);
 #
 if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-    print "CheckDBRole did not return PRIMARY\n";
+    print "Database role is not PRIMARY. Exit.\n";
     exit 1;
 }
 

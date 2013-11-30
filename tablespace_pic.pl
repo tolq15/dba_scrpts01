@@ -6,7 +6,6 @@ use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
 use Getopt::Long;
 use File::Basename;
-use Config::IniFiles;
 use perlchartdir;
 
 use lib $ENV{WORKING_DIR};

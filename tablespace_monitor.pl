@@ -15,7 +15,6 @@ use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
 use Getopt::Long;
 use File::Basename;
-use Config::IniFiles;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};
@@ -47,7 +46,7 @@ my $dbh = Connect2Oracle ($db_name);
 #-------------------------------------------------------------#
 if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-    print "This is not PRIMARY database. Exit.\n";
+    print "Database role is not PRIMARY. Exit.\n";
     exit 1;
 }
 

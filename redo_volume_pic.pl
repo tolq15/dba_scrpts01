@@ -1,28 +1,27 @@
 #!/usr/bin/perl -w
 
 use strict;
+use warnings;
 use DBI;
 use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
 use Getopt::Long;
 use File::Basename;
-use Config::IniFiles;
 use perlchartdir;
 
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
 
+my $db_name     = $ENV{ORACLE_SID};
+my $server_name = $ENV{ORACLE_HOST_NAME};
+my $location    = $ENV{GE0_LOCATION};
+
 #------------------------#
 # Parse input parameters #
 #------------------------#
-chomp (my $server_name = `hostname`);
-my $db_name = uc $ENV{ORACLE_SID};
 my $days;
-
 GetOptions('days:s', \$days);
 die "ERROR: Number of days required\n" if (!defined $days);
-
-my $location = 'Seattle';
 
 #
 # Connect to the database and run query
@@ -34,7 +33,7 @@ my $dbh = Connect2Oracle ($db_name);
 #
 if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-    print "CheckDBRole did not return PRIMARY\n";
+    print "Database role is not PRIMARY. Exit.\n";
     exit 1;
 }
 

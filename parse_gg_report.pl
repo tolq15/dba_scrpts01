@@ -22,28 +22,21 @@
 #===========================================================#
 
 use strict;
+use warnings;
 use Cwd;
-use Getopt::Long;
 use File::Basename;
 use DBI;
 use DBD::Oracle qw(:ora_session_modes);
 use FileHandle;
-use Config::IniFiles;
 use Time::Local;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
 
+my $db_name     = uc $ENV{ORACLE_SID};
+my $server_name = uc $ENV{ORACLE_HOST_NAME};
 my $timestamp2remember;
-
-# Get hostname. This value is used to access config file.
-chomp (my $server_name = `hostname`);
-
-#-------------------------------------------#
-# Check and Parse required input parameters #
-#-------------------------------------------#
-my $db_name = uc $ENV{ORACLE_SID};
 
 # Connect to the database
 my $dbh = Connect2Oracle ($db_name);
@@ -53,7 +46,7 @@ my $dbh = Connect2Oracle ($db_name);
 #
 if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-    print "CheckDBRole did not return PRIMARY\n";
+    print "Database role is not PRIMARY. Exit.\n";
     exit 1;
 }
 
@@ -94,7 +87,8 @@ my $old_timestamp      = $config_params_ref->{$unique_db_name}{'timestamp'};
 if (   ( !defined $gg_report_file_ini )
     or ( !defined $search_string      )
     or ( !defined $report_directory   )
-    or ( !defined $tables             ))
+    or ( !defined $tables             )
+   )
 {
     print "Check configuration file. Some parameters were not configured.\n";
     exit 1;
@@ -125,8 +119,7 @@ foreach (reverse @report_files)
 chdir $current_dir;
 
 # Write new timestamp into configuration file
-RewriteConfigFile ($unique_db_name, $config_params_ref, 'timestamp', $timestamp2remember)
-    or die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFile ($unique_db_name, $config_params_ref, 'timestamp', $timestamp2remember);
 
 exit;
 

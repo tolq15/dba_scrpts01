@@ -31,7 +31,6 @@ use DBI;
 use DBD::Oracle qw(:ora_session_modes);
 use FileHandle;
 use Time::Local;
-use Config::IniFiles;
 
 use lib $ENV{WORKING_DIR};
 require $ENV{MY_LIBRARY};
@@ -71,7 +70,7 @@ my $dbh = Connect2Oracle ($db_name);
 #
 if ( CheckDBRole($db_name) !~ m/PRIMARY/ )
 {
-    print "CheckDBRole did not return PRIMARY\n";
+    print "Database role is not PRIMARY. Exit.\n";
     exit 1;
 }
 

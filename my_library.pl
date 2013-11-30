@@ -33,10 +33,16 @@ sub Connect2Oracle
 
 sub GetConfig
 {
+    use Config::IniFiles;
+
     # Generate configuration file name based on script name.
     # Directory structure and config file extension are hard-coded here.
+    # $script_name - name of the script without extension.
     my ( $script_name, $script_dir, $script_ext ) = fileparse( $0, '\..*' );
-    my $config_file_name = $script_dir . "./config/" . $script_name . '.conf';
+
+    # $ENV{WORKING_DIR} allows to change directory between
+    # calls to GetConfig and RewriteConfigFile.
+    my $config_file_name = $ENV{WORKING_DIR} . "/config/" . $script_name . '.conf';
 
     # Read configuration file into hash
     my %config_params = ();

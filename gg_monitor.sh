@@ -20,7 +20,7 @@
 MAX_LAG=$3
 
 # Generate log file name
-LOG_FILE=/home/oracle/scripts/log/gg_monitor_$THE_TIME.log
+LOG_FILE=${WORKING_DIR}/log/gg_monitor_$THE_TIME.log
 
 # Check if PMON is running
 if [ `ps -ef | grep ora_pmon_$ORACLE_SID | grep -v grep | wc -l` -eq 0 ]; then
@@ -42,6 +42,17 @@ if [ "$CURRENT_ROLE" != "PRIMARY" ]
 then
     # Yes.
     echo "This is STANDBY database. GG should run on PRIMARY only."
+
+    # Is GG running?
+    if [ `ps -ef | grep "./mgr PARAMFILE" | grep -v grep | wc -l` -ne 0 ]
+    then
+        # Yes
+        echo "GoldenGate Manager is running on Standby NVC database" | mailx -s "GoldenGate
+ Manager is running on $ORACLE_HOST_NAME for Standby database $ORACLE_SID" $DBA_EMAIL
+    else
+        echo "GoldenGate is not running."
+    fi
+
     exit
 fi
 

@@ -10,7 +10,6 @@ use warnings;
 use File::Basename;
 use File::ReadBackwards;
 use FileHandle;
-use Config::IniFiles;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};
@@ -141,7 +140,6 @@ else
 # All is done. Now we can overwrite old timestamp #
 # in configuration file                           #
 #-------------------------------------------------#
-RewriteConfigFile ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember)
-    or die "ERROR: rewriting Config File: @Config::IniFiles::errors\n";
+RewriteConfigFile ($config_db_name, $config_params_ref, 'timestamp', $timestamp2remember);
 
 exit;
