@@ -29,7 +29,8 @@ export DB_ROLE_FILE=$WORKING_DIR/log/current_db_role_${ORACLE_SID}.txt
 export MY_LIBRARY=my_library.pl
 
 # Mail settings
-#export DBA_EMAIL=anatoli.lyssak@nuance.com
-export DBA_EMAIL=opsDBAdmin@mobile.asp.nuance.com,kishore.mohapatra@nuance.com
-export TO=opsDBAdmin@mobile.asp.nuance.com
-export SMTP=stoam02.ksea.net
+#export DBA_EMAIL=anatoli.lyssak@xxxxxx.com
+export DBA_EMAIL=opsDBAdmin@xxxxxxxxxx.com
+export ALERT_LOG_FILE=/home/oracle/scripts/log/alert_monitor_$1.log
+export TO=opsDBAdmin@xxxxxxxxx
+export SMTP=xxxxxxx
