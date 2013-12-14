@@ -1,17 +1,12 @@
 #!/bin/bash
 
-# Guy Boulais, 2011/4/18
-# Anatoli Lyssak, 04/19/2011
-#
-# Script to start/stop listener LISTENER depending Primary/Standby database #
-
 #
 # Setup environment from cron job
 #
 . /home/oracle/scripts/.bash_profile_cron $1 $2
 export LISTENER=$3
 
-cd /home/oracle/scripts
+cd $WORKING_DIR
 
 # Check if PMON is running
 if [ `ps -ef | grep ora_pmon_$ORACLE_SID | grep -v grep | wc -l` -eq 0 ]; then
@@ -30,14 +25,8 @@ fi
 echo "Oracle is running"
 
 # Write current database role to variable
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 # Is it STANDBY?
 if [ "$CURRENT_ROLE" = "PHYSICAL STANDBY" ];
@@ -50,7 +39,7 @@ then
         lsnrctl stop $LISTENER
         echo "Listener $LISTENER stopped."
     else
-        echo "Listener $LISTENER was not running."
+        echo "Listener $LISTENER is not running."
     fi
     exit
 elif [ "$CURRENT_ROLE" = "PRIMARY" ];
@@ -62,7 +51,7 @@ then
         lsnrctl start $LISTENER
         echo "Listener $LISTENER started."
     else
-        echo "Listener $LISTENER was running."
+        echo "Listener $LISTENER is running."
     fi
 else
     echo "Can't find the database role to start/stop listener $LISTENER."

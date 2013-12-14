@@ -16,14 +16,8 @@ fi
 echo "Oracle is running"
 
 # Check database role
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE||'+'||OPEN_MODE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 # Is it PRIMARY?
 if [ "$CURRENT_ROLE" != "PRIMARY+READ WRITE" ]
@@ -44,7 +38,7 @@ host_name=`hostname`
 #
 # Create list of the tablespaces
 #
-TS_LIST=$(sqlplus -s / as sysdba <<EOF
+TS_LIST=$(sqlplus -L -s / as sysdba <<EOF
 set feed off
 set head off
 set pages 0

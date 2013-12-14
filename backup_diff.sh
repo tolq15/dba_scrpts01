@@ -4,17 +4,11 @@
 . /home/oracle/scripts/.bash_profile_cron $1 $2
 
 # Prepare log file name with time stamp
-LOG_FILE=/home/oracle/scripts/log/Diff_$1_$THE_TIME.log
+LOG_FILE=$WORKING_DIR/log/Diff_$1_$THE_TIME.log
 
 # Write current database role to variable
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 # Is it PRIMARY?
 if [ "$CURRENT_ROLE" = "PRIMARY" ]

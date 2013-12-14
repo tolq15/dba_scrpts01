@@ -22,7 +22,7 @@ echo "PMON for $ORACLE_SID is running"
 #*************************************************************
 # Test to see if Oracle is accepting connections
 #*************************************************************
-CHECK_OUTPUT0=$($ORACLE_HOME/bin/sqlplus -s / as sysdba <<!
+CHECK_OUTPUT0=$($ORACLE_HOME/bin/sqlplus -L -s / as sysdba <<!
 set feed off
 col instance_name for a15
 col status        for a15

@@ -11,21 +11,15 @@
 . /home/oracle/scripts/.bash_profile_cron $1 $2
 
 # Write current database role to variable
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 if [ "$CURRENT_ROLE" = "PRIMARY" ];
 then
     echo "This is PRIMARY database."
 
 #load stats
-sqlplus -s / as sysdba <<eof2
+sqlplus -L -s / as sysdba <<eof2
 set pages 0
 insert into dba_monitor.space_history_daily
   select trunc(sysdate) run_date,

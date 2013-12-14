@@ -15,7 +15,7 @@
 cd /home/oracle/scripts
 
 # Prepare log file name with time stamp
-LOG_FILE=/home/oracle/scripts/log/Full_$1_`date +%Y%m%d%H%M%S`.log
+LOG_FILE=$WORKING_DIR/log/Full_$1_`date +%Y%m%d%H%M%S`.log
 
 # Check to see if there is any full backup running or not ?
 if [ `ps -ef | rep rman | grep "Full_$1" | grep -v grep | wc -l` -ne 0 ]
@@ -25,14 +25,8 @@ then
 fi
 
 # Write current database role to variable
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 # Is it PRIMARY?
 if [ "$CURRENT_ROLE" != "PRIMARY" ];

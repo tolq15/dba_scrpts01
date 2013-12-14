@@ -7,48 +7,41 @@
 # or put it to config file;
 #==========================================================#
 import os
+import ConfigParser
 import re
-from datetime import datetime
 import fileinput
 import xlsxwriter
 
-# HARD-CODED!!!
-sar_dir = '/var/log/sa'
-location = 'Seattle'
-# hostname = os.getenv('HOSTNAME')
-# Command above does not work from cron. It return 'None'.
-# But it works from command line.
-# It looks like os.getenv require some environment settings.
+# Open config file and read parameters
+# __file__ is a script name from command line.
+# Example: ./script.py or /full/path/to/the/script.py
+# os.path.splitext(__file__)[0] return __file__ without extention (.py);
+# .split('/')[-1] return string after last '/'
+script_name  = os.path.splitext(__file__)[0].split('/')[-1]
+config_param = ConfigParser.RawConfigParser()
+config_param.read('./config/' + script_name + '.conf')
 
 # Generate output file name
-timestamp = datetime.now().strftime("%Y%m%d")
-hostname = os.uname()[1]
-output_dir = '/home/oracle/scripts/Excel/'
-excel_file = output_dir + 'sar_mem4excel_' + location + '_' + hostname + '_' + timestamp + '.xlsx'
-column_headers = ('Date'
-                  ,'Free Memory'
-                  ,'Used Memore'
-                  ,'Buffers'
-                  ,'Cached'
-                  ,'Free Swap'
-                  ,'Used Swap'
-                  ,'Swap Cad')
-workbook  = xlsxwriter.Workbook(excel_file)
-worksheet_name = 'Memory Usage'
-worksheet = workbook.add_worksheet(worksheet_name)
-bold      = workbook.add_format({'bold': 1})
-file_timestamp = ''
-column_headers_done = 0
-excel_data = []
-row_number = 0
+location   = os.environ['GE0_LOCATION']
+hostname   = os.uname()[1]
+excel_file = config_param.get('MEMORY', 'output_dir') + script_name + '_' + location + '_'+hostname + '_' + os.environ['THE_TIME'] + '.xlsx'
 
-read_following_lines = 0
+# Setup spreadsheet
+file_timestamp = ''
+worksheet_name = 'Memory Usage'
+workbook       = xlsxwriter.Workbook(excel_file)
+worksheet      = workbook.add_worksheet(worksheet_name)
+bold           = workbook.add_format({'bold': 1})
+column_headers = 0
+row_number     = 0
+start_reading  = 0
+excel_data     = []
 
 #-------------------------------------------#
 # Read SAR log files in chronological order #
 #-------------------------------------------#
 # go to SAR directory
-os.chdir(sar_dir)
+os.chdir(config_param.get('MEMORY', 'sar_dir'))
 
 # List all files in this directory in chrono order
 all_sar_files = sorted(filter(os.path.isfile, os.listdir('.')), key=os.path.getmtime)
@@ -74,21 +67,20 @@ for the_line in fileinput.input(text_files):
     # Start record the data
     if re.match('.*\skbmemfree\s.*', the_line):
         # Set the flag
-        read_following_lines = 1
+        start_reading = 1
         # Populate header once only
-        if column_headers_done == 0:
-            worksheet.write_row('A1', column_headers, bold)
-            column_headers_done = 1
-            #print column_headers
+        if column_headers == 0:
+            worksheet.write_row('A1', config_param.get('MEMORY','column_headers').split(','), bold)
+            column_headers = 1
         continue
     
     # Stop record the data
-    if re.match('^Average.*', the_line) and read_following_lines == 1:
-        read_following_lines = 0
+    if re.match('^Average.*', the_line) and start_reading == 1:
+        start_reading = 0
         continue
 
     # Record the data
-    if read_following_lines == 1:
+    if start_reading == 1:
         # Skip all next headers
         if re.match('.*\skbmemfree\s.*', the_line):
             continue

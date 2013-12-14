@@ -1,28 +1,24 @@
 #!/bin/bash
+
 # Setup environment for cron job
 . /home/oracle/scripts/.bash_profile_cron $1 $2
-cd /home/oracle/scripts
+
+cd $WORKING_DIR
 
 #EMAIL=kishore.mohapatra@nuance.com
 
-REPORT=/home/oracle/scripts/reports/dbms_space_space_usage.txt
+REPORT=$WORKING_DIR/reports/dbms_space_space_usage.txt
 
 # Write current database role to variable
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
-set feed off
-set head off
-set pages 0
-select DATABASE_ROLE from v\$database;
-exit
-EOF
-)
+CURRENT_ROLE=`cat $DB_ROLE_FILE`
+echo Current role: $CURRENT_ROLE
 
 # Is it PRIMARY?
 if [ "$CURRENT_ROLE" = "PRIMARY" ]
 then
     echo "This is PRIMARY database. Let's run the report."
 
-sqlplus -s "/ as sysdba" << EOF
+sqlplus -L -s "/ as sysdba" << EOF
 set serveroutput on
 
 col fs4b format 999,999,999,999,999

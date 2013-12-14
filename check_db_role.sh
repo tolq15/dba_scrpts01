@@ -9,7 +9,7 @@
 # * * * * * . /home/oracle/scripts/.bash_profile_cron dbname db_unique_name;/home/oracle/scripts/check_db_role.sh > /home/oracle/scripts/log/check_db_role_dbname.log
 
 # Write current database role to variable
-CURRENT_ROLE=$(sqlplus -s / as sysdba <<EOF
+CURRENT_ROLE=$(sqlplus -L -s / as sysdba <<EOF
 set feed off
 set head off
 set pages 0
