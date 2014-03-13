@@ -5,13 +5,10 @@
 # (>=11.2.0.1 only) generated in last 6 minutes. The script is scheduted to run each  #
 # 5 minutes, so some alerts can be reported twice. I think it is OK.                  #
 #                                                                                     #
-# Parameter:                                                                          #
-# -sid database_name;                                                                 #
-#                                                                                     #
 # Crontab command:                                                                    #
-# 2,7,12,17,22,27,32,37,42,47,52,57 * * * *                                           #
-#    /home/oracle/scripts/alert_monitor.pl -sid sdavzse1                              #
-#   > /home/oracle/scripts/log/alert_monitor_sdavzse1.log 2>&1                        #
+# 3,8,13,18,23,28,33,38,43,48,53,58 * * * * . /home/oracle/scripts/.bash_profile_cron #
+# sdavzse1 sdavzse1a;/home/oracle/scripts/alert_monitor.pl >                          #
+# /home/oracle/scripts/log/alert_monitor_sdavzse1.log 2>&1                            #
 #                                                                                     #
 # Script reads corresponding section (based on DB name and server name) from          #
 # configuration file ./config/alert_monitor.conf, where 'config' is                   #
@@ -35,7 +32,6 @@
 # errors_exclude=(ORA-3136|ORA-1654|ORA-28500|ORA-00060|ORA-00235)                    #
 # errors_include=(ORA-|TNS-|crash|Error)                                              #
 #.....................................................................................#
-#                                                                                     #
 # After reading all messages, generated in last 6 minutes, the messages are filtered  #
 # using 'include' and 'exclude' patterns. Result is written to log file and e-mailed  #
 # to DBA team.                                                                        #
@@ -44,8 +40,8 @@
 use strict;
 use warnings;
 use DBI;
-use FileHandle;
 use DBD::Oracle qw(:ora_session_modes);
+use FileHandle;
 use File::Basename;
 use Mail::Sender;
 
@@ -85,6 +81,7 @@ if (( !defined $errors_include ) or ( !defined $errors_exclude ))
 # Connect to the database. Call function from my_library.pl
 my $dbh = Connect2Oracle ($db_name);
 
+# HARD-CODED:
 # Query to select alert messages generated in last 6 minutes
 my $sql01 = qq
 {
@@ -132,8 +129,9 @@ for (@$result_array_ref)
 #
 if ( $message ne '')
 {
-    my $subject = "Errors in Oracle Alert Log $db_name on $server_name.";
-    SendAlert ( $server_name, $db_name, $subject, $message );
+    SendAlert ( $server_name,
+                "Errors in Oracle Alert Log $db_name on $server_name.",
+                $message );
 }
 else
 {

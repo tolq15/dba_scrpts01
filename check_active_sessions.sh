@@ -20,14 +20,14 @@ EOF
 )
 
 # Write to log file
-echo Database $1 on server `hostname` has $APP_ACTIVE_SESSIONS active application sessions.
+echo Database $1 on server $HOSTNAME has $APP_ACTIVE_SESSIONS active application sessions.
 echo Maximum set to $SESSIONS_MAX.
 
 # Check if there are too many sessions and send e-mail if needed
 if (( APP_ACTIVE_SESSIONS > SESSIONS_MAX ))
 then
     # Send e-mail
-    echo "Database $1 on server `hostname` has $APP_ACTIVE_SESSIONS active application sessions" >$RPT_FILE
+    echo "Database $1 on server $HOSTNAME has $APP_ACTIVE_SESSIONS active application sessions" >$RPT_FILE
     echo "" >>$RPT_FILE
     echo " NOC: If you got this alarm >= 2 times in 3 minutes,  please call NVC DBA Anatoli at 339-227-5953 or  DBA york zhang at 408-3293397  or call Saurabh at 408-429-5984" >> $RPT_FILE
 sqlplus -s "/ as sysdba" << SQLRUNNING >> $RPT_FILE
@@ -53,7 +53,7 @@ sqlplus -s "/ as sysdba" << SQLRUNNING >> $RPT_FILE
   
   EXIT
 SQLRUNNING
-    cat $RPT_FILE | mailx -s "Database $1 on server `hostname` has $APP_ACTIVE_SESSIONS active application sessions ." $EMAIL
+    cat $RPT_FILE | mailx -s "Database $1 on server $HOSTNAME has $APP_ACTIVE_SESSIONS active application sessions ." $EMAIL
 fi
 
 

@@ -23,7 +23,7 @@ GetOptions('ts:s', \$ts_name, 'days:s', \$days);
 die "ERROR: Tablespace name required\n" if (!defined $ts_name);
 die "ERROR: Number of days required\n"  if (!defined $days);
 
-my $location = 'Seattle';
+my $location = $ENV{GE0_LOCATION};
 
 #---------------------------------------------------#
 # Prepare it this way in case of time gaps in data. #

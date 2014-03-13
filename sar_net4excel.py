@@ -8,50 +8,48 @@
 # or put it to config file;
 #==========================================================#
 import os
+import ConfigParser
 import re
-from datetime import datetime
 import fileinput
 import xlsxwriter
 
-# HARD-CODED!!!
-sar_dir = '/var/log/sa'
-location = 'Seattle'
-# hostname = os.getenv('HOSTNAME')
-# Command above does not work from cron. It return 'None'.
-# But it works from command line.
-# It looks like os.getenv require some environment settings.
+# Open config file and read parameters
+# __file__ is a script name from command line.
+# Example: ./script.py or /full/path/to/the/script.py
+# os.path.splitext(__file__)[0] return __file__ without extention (.py);
+# .split('/')[-1] return string after last '/'
+script_name  = os.path.splitext(__file__)[0].split('/')[-1]
+working_dir  = os.environ['WORKING_DIR']
+config_param = ConfigParser.RawConfigParser()
+config_param.read(working_dir + '/config/' + script_name + '.conf')
 
 # Generate output file name
-timestamp = datetime.now().strftime("%Y%m%d")
-hostname = os.uname()[1]
-output_dir = '/home/oracle/scripts/Excel/'
-excel_file = output_dir+'sar_net4exce_'+location +'_'+ hostname+'_'+timestamp+'.xlsx'
-worksheet_dir = {}
-column_headers = ('Date'
-                  ,'IFACE'
-                  ,'packets received per second'
-                  ,'transmitted packets per second'
-                  ,'bytes received per second'
-                  ,'bytes transmitted per second')
-workbook  = xlsxwriter.Workbook(excel_file)
-nic_names = ('eth0','eth1','eth2','eth3','lo')
+location   = os.environ['GE0_LOCATION']
+hostname   = os.uname()[1]
+excel_file = config_param.get('NET', 'output_dir') + script_name + '_' + location + '_'+hostname + '_' + os.environ['THE_TIME'] + '.xlsx'
 
+# Setup spreadsheet
+workbook  = xlsxwriter.Workbook(excel_file)
+nic_names = config_param.get('NET','nic_names').split(',')
+
+worksheet_dir = {}
 for the_nic_name in (nic_names):
     # create dictionary with key = nic_name and value = worksheet
     worksheet_dir[the_nic_name] = workbook.add_worksheet(the_nic_name)
 
 bold = workbook.add_format({'bold': 1})
-file_timestamp = ''
+file_timestamp  = ''
+column_headers  = config_param.get('NET','column_headers').split(',')
 row_number      = 0
 file_row_number = 0
-column_headers_done  = 0
-read_following_lines = 0
+start_reading   = 0
+headers_done    = 0
 
 #-------------------------------------------#
 # Read SAR log files in chronological order #
 #-------------------------------------------#
 # go to SAR directory
-os.chdir(sar_dir)
+os.chdir(config_param.get('NET', 'sar_dir'))
 
 # List all files in this directory in chrono order
 all_sar_files = sorted(filter(os.path.isfile, os.listdir('.')), key=os.path.getmtime)
@@ -77,22 +75,21 @@ for the_line in fileinput.input(text_files):
     # Start record the data
     if re.match('.*\sIFACE\s*rxpck/s\s.*', the_line):
         # Set the flag
-        read_following_lines = 1
-        # Populate each worksheet header once only
-        if column_headers_done == 0:
+        start_reading = 1
+        # Populate header once only
+        if headers_done == 0:
             for the_worksheet in workbook.worksheets():
                 the_worksheet.write_row('A1', column_headers, bold)
-            column_headers_done = 1
-            #print column_headers
+            headers_done = 1
         continue
     
     # Stop record the data
-    if re.match('^Average.*', the_line) and read_following_lines == 1:
-        read_following_lines = 0
+    if re.match('^Average.*', the_line) and start_reading == 1:
+        start_reading = 0
         continue
 
     # Record the data
-    if read_following_lines == 1:
+    if start_reading == 1:
         # Skip all next headers
         if re.match('.*\sIFACE\s.*', the_line):
             continue

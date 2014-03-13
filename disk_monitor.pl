@@ -20,7 +20,7 @@ for (my $ii=0; $ii < ($#df_info+1)/2; $ii++)
     if ($df_info[$ii*2] >= $ARGV[0])
     {
         my $message = "$server_name : $df_info[$ii*2+1] $df_info[$ii*2]% space used.";
-        SendAlert ( $server_name, $db_name, $message, $message);
+        SendAlert ( $server_name, $message, $message);
     }
     print "FS: $df_info[$ii*2+1] \t=> $df_info[$ii*2]% full.\n";
 }

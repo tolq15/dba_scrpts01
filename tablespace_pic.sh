@@ -25,15 +25,12 @@ then
     # No.
     echo "This is STANDBY database. This script should run on PRIMARY only."
     echo "Or this is PRIMARY database MOUNTED only. Do nothing."
-
-    # Send e-mail
-
     exit
 fi
 
 echo "This is PRIMARY database. Let's create pictures."
 
-host_name=`hostname`
+host_name=$HOSTNAME
 
 #
 # Create list of the tablespaces
@@ -53,7 +50,6 @@ EOF
 for TS in $TS_LIST;
 do
     echo Tablespace $TS SID: $1 Days: $3
-    #perl -I/home/oracle/tolq/ChartDirector/lib ./tablespace_pic.pl -sid $1 -ts $TS -days $3
     perl -I/home/oracle/tolq/ChartDirector/lib ./tablespace_pic.pl -ts $TS -days $3
 
     #

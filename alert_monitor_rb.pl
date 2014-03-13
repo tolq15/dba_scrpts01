@@ -4,16 +4,14 @@
 # This script reads Oracle alert log file:                                            #
 # $ORACLE_BASE/diag/rdbms/$ORACLE_UNQNAME/$ORACLE_SID/trace/alert_$ORACLE_SID.log     #
 # starting from last row backwards untill timestamp stored in configuration file.     #
-# Parameter:                                                                          #
-# -sid database_name;                                                                 #
 #                                                                                     #
 # Crontab command (example):                                                          #
-# 2,7,12,17,22,27,32,37,42,47,52,57 * * * *                                           #
-#    /home/oracle/scripts/alert_monitor.pl -sid xxxxxxxx                              #
-#   > /home/oracle/scripts/log/alert_monitor_xxxxxxxx.log 2>&1                        #
+# 2,7,12,17,22,27,32,37,42,47,52,57 * * * * . /home/oracle/scripts/.bash_profile_cron #
+# nvcsea3 nvcsea3b;/home/oracle/scripts/alert_monitor_rb.pl >                         #
+#/home/oracle/scripts/log/alert_monitor_rb_nvcsea3.log 2>&1                           #
 #                                                                                     #
 # Script reads corresponding section (based on DB name and server name) from          #
-# configuration file ./config/alert_monitor.conf, where 'config' is                   #
+# configuration file ./config/alert_monitor_rb.conf, where 'config' is                #
 # subdirectory of the script home directory.                                          #
 #............................... configuration file ..................................#
 # [STPHORACLEDB05_NVCSEA3]
@@ -22,11 +20,8 @@
 # # ORA-1652: unable to extend temp segment
 # # ORA-28500: connection from ORACLE to a non-Oracle system returned this message:
 # # ORA-00235: control file read without a lock inconsistent due to concurrent update
-# alert_log=/opt/oracle/diag/rdbms/nvcsea3b/nvcsea3/trace/alert_nvcsea3.log
 # errors_exclude=(ORA-3136|ORA-1654|ORA-28500|ORA-00235)
 # errors_include=(ORA-|TNS-|crash|Error)
-# to=opsDBAdmin@mobile.asp.nuance.com
-# smtp=stoam02.ksea.net
 # timestamp=Sun Apr 12 07:29:48 2009
 #
 # [STPHORACLEDB05_SDAVZSE1]
@@ -35,17 +30,9 @@
 # # ORA-1652: unable to extend temp segment
 # # ORA-28500: connection from ORACLE to a non-Oracle system returned this message:
 # # ORA-00235: control file read without a lock inconsistent due to concurrent update
-# alert_log=/opt/oracle/diag/rdbms/nvcsea3b/nvcsea3/trace/alert_sdavzse1.log
 # errors_exclude=(ORA-3136|ORA-1654|ORA-28500|ORA-00060|ORA-00235)
 # errors_include=(ORA-|TNS-|crash|Error)
-# to=opsDBAdmin@mobile.asp.nuance.com
-# smtp=stoam02.ksea.net
 # timestamp=Sun Apr 12 07:29:48 2009
-#.....................................................................................#
-#                                                                                     #
-# After reading all messages, generated in last 6 minutes, the messages are filtered  #
-# using 'include' and 'exclude' patterns. Result is written to log file and e-mailed  #
-# to DBA team.                                                                        #
 #=====================================================================================#
 
 use strict;
@@ -149,12 +136,12 @@ while( <ALERT> )
 #----------------------------------------------------#
 if ( ( $message ne '' ) and ( $oldest_timestamp ne $timestamp2remember ))
 {
-    my $subject = "Errors in Oracle Alert Log $db_name on $server_name.";
-
     # Print to output file and error message in chronological order
     $message = "Errors found in time range\n$oldest_timestamp\n$timestamp2remember\n"
               . $message;
-    SendAlert ( $server_name, $db_name, $subject, $message );
+    SendAlert ( $server_name,
+                "Errors in Oracle Alert Log $db_name on $server_name.",
+                $message );
 }
 else
 {

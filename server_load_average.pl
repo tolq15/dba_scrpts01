@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use File::Basename;
 use Mail::Sender;
 
 use lib $ENV{WORKING_DIR};

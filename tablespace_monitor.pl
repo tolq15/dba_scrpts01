@@ -189,7 +189,7 @@ for my $tablespace_name (keys %ts_info)
     if ($percent_used >= $percent_max)
     {
         my $message = "Server $server_name; Database: $db_name: Tablespace $tablespace_name have $percent_used% space used.";
-        SendAlert ( $server_name, $db_name, $message, $message);
+        SendAlert ( $server_name, $message, $message);
     }
 }
 

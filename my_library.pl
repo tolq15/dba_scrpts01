@@ -77,7 +77,9 @@ sub CheckDBRole
 
 sub SendAlert
 {
-    my ($the_server, $the_db_name, $the_subject, $the_message) = @_;
+    use File::Basename;
+
+    my ($the_server, $the_subject, $the_message) = @_;
     my $sender = new Mail::Sender;
     (ref ($sender->MailMsg
           (
